@@ -1,6 +1,6 @@
 EXEC=test
 CC=gcc
-CFLAGS=-Wall
+CFLAGS=-Wall -g
 
 SRCS=$(shell find ./ -name *.c)
 
