@@ -11,24 +11,34 @@
 #include <fcntl.h>
 #include <ctype.h>
 
-
+// 2MB size
 #define CHUNK (2<<20)
 
 unsigned int fragmentation_score_node0(){
 
-	int nr_dma = 3998;
-	int nr_dma32 = 443961;
-	int nr_normal = 33030144;
-	int free_dma =0;
+	int nr_dma = 3998;		// #Total Present Pages in ZONE_DMA (Node 0)
+	int nr_dma32 = 443961;		// #Total Present Pages in ZONE_DMA32 (Node 0)
+	int nr_normal = 33030144;	// #Total Present Pages in ZONE_Normal (Node 0)
+
+	// #Free pages in each Zone
+	int free_dma =0;		 
 	int free_dma32 =0;
 	int free_normal = 0;
 	
-	int suit_dma = 0;
-	int suit_dma32 = 0;
-	int suit_normal = 0;
+	int suit_dma = 0;	// #Pages that suitable for 2MB allocation in ZONE_DMA
+	int suit_dma32 = 0;	// #Pages that suitable for 2MB allocation in ZONE_DMA32
+	int suit_normal = 0;	// #Pages that suitable for 2MB allocation in ZONE_NORMAL
 
-	int node0_total = nr_dma + nr_dma32 + nr_normal;
+	int node0_total = nr_dma + nr_dma32 + nr_normal;	// #Total Present Pages in Node 0
 
+	/*
+		$cat /proc/buddyinfo
+		
+		Node 0, zone      DMA      3      1      1      0      0      0      0      0      1      1      2
+		Node 0, zone    DMA32      7      5      5      5      6      6      4      5      5      3    412
+		Node 0, zone   Normal   2819  24705  34613  29359  22909  13079   6058   2769   1655    819  28033
+		Node 1, zone   Normal  19276  28269  33011  28276  20925  12081   4325   1011    208     74  30270
+	*/
 	FILE *fp;
 	char buffer[256];
 	
@@ -59,13 +69,7 @@ unsigned int fragmentation_score_node0(){
 		while(*ptr && *ptr != ' ') ptr++;
 		while(*ptr && *ptr == ' ') ptr++;
 		
-
-		
-		sscanf(ptr, "%*[^ ] %s", zone_name);
-
-//		printf("Zone: %s\n", zone_name);
-		
-//		printf("%ld\n",strlen(zone_name));		
+		sscanf(ptr, "%*[^ ] %s", zone_name);	// DMA, DMA32, Normal
 		
 		while(*ptr && *ptr != ' ') ptr++;
 		while(*ptr && *ptr == ' ') ptr++;
@@ -73,9 +77,6 @@ unsigned int fragmentation_score_node0(){
 		while(*ptr && *ptr != ' ') ptr++;
 		while(*ptr && *ptr == ' ') ptr++;
 	
-	
-//		printf("%s",ptr);
-
 		int block_count=0;
 		
 		ptr = buffer;
@@ -96,7 +97,6 @@ unsigned int fragmentation_score_node0(){
 	
 	
 		while(sscanf(ptr,"%s", bs) == 1) {
-//			printf("%d\n",atoi(bs));
 			block_count = atoi(bs);
 			if(strcmp(zone_name, "DMA") ==0){
 				free_dma += block_size * block_count;
@@ -138,7 +138,6 @@ unsigned int fragmentation_score_node0(){
 	
 	unsigned int fragmentation_score = (unsigned int)((frag_dma + frag_dma32 + frag_normal) / node0_total);
 	
-//	printf("%d\n",fragmentation_score);
 	return fragmentation_score;		
 
 
